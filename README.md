@@ -7,8 +7,14 @@
 # -
 链外小工具
 
-# transferFroOneToMany
+## transferFroOneToMany
 批量转账主币工具 一对多
 
-# transferFroManyToOne
+## transferFroManyToOne
 批量转账主币工具 多对一
+
+## transferERC20FroOneToMany
+批量转移ERC20工具 一对多
+
+## transferERC20FroManyToOne
+批量转移ERC20工具 多对一
