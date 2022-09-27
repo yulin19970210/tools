@@ -2,7 +2,7 @@
  * @Author: Yulin
  * @Date: 2022-09-27 12:22:22
  * @FilePath: \tools\transferFroOnetoMany.js
- * @Description: 批量转账主币 支持eth bsc
+ * @Description: 批量转账主币一对多 支持eth bsc
  */
 const Web3 = require('web3');
 const readlineSync = require('readline-sync');
