@@ -1,15 +1,19 @@
 /*
  * @Author: Yulin
  * @Date: 2022-09-27 12:22:22
- * @FilePath: \tools\transferFroOnetoMany.js
+ * @FilePath: \tools\transferERC20FroOneToMany.js
  * @Description: 批量转账主币一对多 支持eth bsc
  */
 const Web3 = require('web3');
 const readlineSync = require('readline-sync');
+const ERC20 = require('./abi/ERC20.json')
 
 var BN;
 var web3;
+var erc20;
 var acceptArr = [];
+var token;
+var account;
 
 print("尽量使用源码，不对使用者安全负责,无法保证没有bug");
 print("开源地址:https://github.com/yulin19970210/tools");
@@ -30,18 +34,29 @@ async function init() {
     }
 
     BN = web3.utils.BN;
+
     while (true) {
-        print("请输入转账账户私钥");
+        print("请输入需要转移的token地址");
+        token = readlineSync.question();
+        if (token.length == 42) {
+            erc20 = new web3.eth.Contract(ERC20, token)
+            break;
+        }
+        print("输入格式不正确,请重新输入");
+    }
+
+    while (true) {
+        print("请输入转移token的账户私钥");
         const pKey = readlineSync.question();
         if (pKey.length == 64) {
-            const account = web3.eth.accounts.privateKeyToAccount(pKey);
+            account = web3.eth.accounts.privateKeyToAccount(pKey);
             web3.eth.accounts.wallet.add(account);
             break;
         }
         print("输入格式不正确,请重新输入");
     }
     while (true) {
-        print('请输入接受者地址,输入"y"停止');
+        print('请输入接受token地址,输入"y"停止');
         const add = readlineSync.question();
         if (add.length == 42) {
             acceptArr.push(add);
@@ -57,7 +72,7 @@ async function init() {
     }
     print("请输入单个转账就金额(单位:Ether)");
     const amount = new BN(await web3.utils.toWei(readlineSync.question()));
-    const balance = new BN(await web3.eth.getBalance(web3.eth.accounts.wallet[0].address));
+    const balance = new BN(await erc20.methods.balanceOf(account.address).call({ from: account.address }));
     const sum = amount.mul(new BN(acceptArr.length));
     if (balance.lt(sum)) {
         print("余额不支持所有转账金额,请检查");
@@ -82,22 +97,14 @@ async function main(amount) {
  */
 async function sendTransaction(add, amount) {
     try {
-        let gas = await web3.eth.estimateGas({
-            from: web3.eth.accounts.wallet[0].address,
-            to: add,
-            value: amount
-        });
-        web3.eth.sendTransaction({
-            from: web3.eth.accounts.wallet[0].address,
-            to: add,
-            value: amount,
-            gas
-        }, function (error, hash) {
-            if (error) {
-            } else {
-                print(add + ": 转账成功,成功Hash: " + hash)
-            }
-        });
+
+        let gas = await erc20.methods.transfer(add, amount).estimateGas({ from: account.address });
+        let isTrue = await erc20.methods.transfer(add, amount).send({ from: account.address, to: token, gas });
+        if (isTrue && isTrue.status) {
+            print(add + ": 转账成功");
+        } else {
+            print(add + ": 转账失败");
+        }
     } catch (error) {
         print(add + ": 转账失败", error);
     }
